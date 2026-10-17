@@ -45,22 +45,32 @@ App modules: `:androidApp`, `iosApp`, `:shared` (App, NavHost, initKoin, iOS fra
 
 ## Install
 
-### Claude Code (plugin, from a git repository)
-```bash
-claude plugin marketplace add https://github.com/<owner>/<repo>.git     # or a local path
-claude plugin install tezca-kmp-development@tezca-kmp-marketplace       # --scope user|project|local
-```
-Inside Claude Code you can also run `/plugin marketplace add <git-url>` and then `/plugin install tezca-kmp-development@tezca-kmp-marketplace`. The skills show up as `/tezca-kmp-development:start-kmp`, `/tezca-kmp-development:make-screen` and so on.
+### Claude Code (plugin, from the git marketplace)
+Repository: **https://github.com/AchsDCerrillo/tezca_kmp_plugin** (public, so no credentials are needed).
 
-For a private repository, everyone who installs it needs read access and git credentials (`gh auth login` or SSH). For background updates, also set `GITHUB_TOKEN`.
+From a terminal:
+```bash
+claude plugin marketplace add https://github.com/AchsDCerrillo/tezca_kmp_plugin.git
+claude plugin install tezca-kmp-development@tezca-kmp-marketplace                  # user scope (default)
+claude plugin install tezca-kmp-development@tezca-kmp-marketplace --scope project  # only this project, shared via .claude/settings.json
+```
+Or inside Claude Code:
+```
+/plugin marketplace add AchsDCerrillo/tezca_kmp_plugin
+/plugin install tezca-kmp-development@tezca-kmp-marketplace
+```
+The skills then show up as `/tezca-kmp-development:start-kmp`, `/tezca-kmp-development:make-screen` and so on, and Claude also uses them automatically when a request matches.
+
+Updating: `claude plugin marketplace update tezca-kmp-marketplace`, then restart Claude Code.
 
 ### Codex, Cursor, Antigravity, Gemini CLI, OpenCode, Copilot (and Claude without the plugin)
 ```bash
-git clone https://github.com/<owner>/<repo>.git tezca-kmp && cd tezca-kmp
+git clone https://github.com/AchsDCerrillo/tezca_kmp_plugin.git && cd tezca_kmp_plugin
 ./install-skills.sh                                                          # interactive
 ./install-skills.sh --scope project --agents all --project-dir ~/code/my-kmp-app
 ./install-skills.sh --scope user --agents codex,gemini,antigravity
 ./install-skills.sh --list-agents
+git pull && ./install-skills.sh --scope user --agents codex --yes                        # update later
 ./install-skills.sh --uninstall --scope project --agents all --project-dir .
 ```
 | Agent | Project scope | User scope |

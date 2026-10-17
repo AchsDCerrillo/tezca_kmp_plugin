@@ -15,7 +15,7 @@
 #   ./install-skills.sh                                   # interactive
 #   ./install-skills.sh --scope project --agents all --project-dir ~/code/my-api
 #   ./install-skills.sh --scope user --agents codex,gemini
-#   ./install-skills.sh --scope project --agents claude-plugin --marketplace-source https://github.com/AchsDCerrillo/tezca-kmp-development.git
+#   ./install-skills.sh --scope project --agents claude-plugin --marketplace-source https://github.com/AchsDCerrillo/tezca_kmp_plugin.git
 #   ./install-skills.sh --uninstall --scope project --agents all --project-dir .
 #   ./install-skills.sh --list-agents
 # Options: --scope project|user  --agents a,b|all  --project-dir DIR  --marketplace-source URL|PATH
