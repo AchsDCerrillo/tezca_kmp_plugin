@@ -10,7 +10,7 @@
       "name": "tezca-kmp-development",
       "source": "./",
       "description": "Skills to set up and grow Kotlin Multiplatform SDKs and Compose Multiplatform apps (Android + iOS) with MVVM feature modules.",
-      "version": "0.1.0"
+      "version": "0.1.1"
     }
   ]
 }

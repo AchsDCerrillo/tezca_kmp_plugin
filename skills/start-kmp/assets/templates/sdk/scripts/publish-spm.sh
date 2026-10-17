@@ -15,7 +15,8 @@ ZIP="build/$NAME-$VERSION.xcframework.zip"
 [ -d "$XCF_DIR" ] || { echo "Missing $XCF_DIR; run ./gradlew :__SDK_MODULE__:assemble${NAME}ReleaseXCFramework first" >&2; exit 1; }
 mkdir -p build
 (cd "$(dirname "$XCF_DIR")" && zip -qry "$OLDPWD/$ZIP" "$NAME.xcframework")
-CHECKSUM="$(swift package compute-checksum "$ZIP")"
+# Same value as `swift package compute-checksum` (SHA-256 of the zip), without needing a Package.swift here.
+CHECKSUM="$(shasum -a 256 "$ZIP" | cut -d" " -f1)"
 
 if ! gh release view "$TAG" >/dev/null 2>&1; then
   gh release create "$TAG" --title "$TAG" --notes "Automated build $VERSION" ${PRERELEASE:+--prerelease} --target "$(git rev-parse HEAD)"

@@ -1,9 +1,15 @@
 # Lanes used by .github/workflows/dev.yml and release.yml. Run locally with `bundle exec fastlane <platform> <lane>`.
 # Required secrets are listed in docs/ci-secrets.md.
 
+# GitHub passes unset variables as "", so treat empty like missing.
+def env_or(key, default)
+  value = ENV[key].to_s.strip
+  value.empty? ? default : value
+end
+
 IOS_PROJECT = "iosApp/iosApp.xcodeproj"
 IOS_SCHEME = "iosApp"
-IOS_BUNDLE_ID = ENV.fetch("IOS_BUNDLE_ID", "__APP_ID__.__APP_NAME__")
+IOS_BUNDLE_ID = env_or("IOS_BUNDLE_ID", "__APP_ID__.__APP_NAME__")
 BASE_URL_DEV_HOST = "__BASE_URL_DEV_HOST__"
 BASE_URL_PROD_HOST = "__BASE_URL_PROD_HOST__"
 
@@ -12,7 +18,7 @@ def version_name
 end
 
 def tester_groups
-  ENV.fetch("FIREBASE_TESTER_GROUPS", "qa")
+  env_or("FIREBASE_TESTER_GROUPS", "qa")
 end
 
 platform :android do
@@ -66,16 +72,36 @@ platform :ios do
     )
   end
 
-  def build_ios(export_method:, base_url_host:)
-    increment_build_number(xcodeproj: IOS_PROJECT, build_number: ENV.fetch("BUILD_NUMBER", "1"))
-    increment_version_number(xcodeproj: IOS_PROJECT, version_number: version_name)
+  # match_type: "adhoc" | "appstore". Signing switches from the wizard's automatic signing (which
+  # needs an Xcode account) to the profile match just installed; versions are passed as build
+  # settings, so no agvtool / Info.plist edits are needed.
+  def build_ios(export_method:, match_type:, base_url_host:)
+    team_id = ENV.fetch("APPLE_TEAM_ID")
+    profile = ENV.fetch("sigh_#{IOS_BUNDLE_ID}_#{match_type}_profile-name")
+    update_code_signing_settings(
+      path: IOS_PROJECT,
+      targets: [IOS_SCHEME],
+      use_automatic_signing: false,
+      team_id: team_id,
+      bundle_identifier: IOS_BUNDLE_ID,
+      profile_name: profile,
+      code_sign_identity: "Apple Distribution"
+    )
     build_app(
       project: IOS_PROJECT,
       scheme: IOS_SCHEME,
       configuration: "Release",
       export_method: export_method,
+      export_options: { provisioningProfiles: { IOS_BUNDLE_ID => profile } },
       # The Xcode build phase runs ./gradlew :shared:embedAndSignAppleFrameworkForXcode, so Kotlin is compiled here too.
-      xcargs: "BASE_URL='#{base_url_host}'",
+      xcargs: [
+        "BASE_URL='#{base_url_host}'",
+        "DEVELOPMENT_TEAM='#{team_id}'",
+        "TEAM_ID=''",                                   # keeps the wizard's ...$(TEAM_ID) bundle-id suffix empty
+        "PRODUCT_BUNDLE_IDENTIFIER='#{IOS_BUNDLE_ID}'",
+        "MARKETING_VERSION='#{version_name}'",
+        "CURRENT_PROJECT_VERSION='#{ENV.fetch("BUILD_NUMBER", "1")}'"
+      ].join(" "),
       output_directory: "build/ios"
     )
   end
@@ -83,8 +109,8 @@ platform :ios do
   desc "Ad-hoc build against the dev API -> Firebase App Distribution"
   lane :dev do
     api_key = asc_api_key
-    match(type: "adhoc", readonly: true, api_key: api_key)
-    build_ios(export_method: "ad-hoc", base_url_host: BASE_URL_DEV_HOST)
+    match(type: "adhoc", readonly: true, api_key: api_key, team_id: ENV.fetch("APPLE_TEAM_ID"))
+    build_ios(export_method: "ad-hoc", match_type: "adhoc", base_url_host: BASE_URL_DEV_HOST)
     firebase_app_distribution(
       app: ENV.fetch("FIREBASE_IOS_APP_ID"),
       service_credentials_file: ENV.fetch("FIREBASE_SERVICE_ACCOUNT_FILE"),
@@ -96,8 +122,8 @@ platform :ios do
   desc "App Store build against the prod API -> TestFlight"
   lane :release do
     api_key = asc_api_key
-    match(type: "appstore", readonly: true, api_key: api_key)
-    build_ios(export_method: "app-store", base_url_host: BASE_URL_PROD_HOST)
+    match(type: "appstore", readonly: true, api_key: api_key, team_id: ENV.fetch("APPLE_TEAM_ID"))
+    build_ios(export_method: "app-store", match_type: "appstore", base_url_host: BASE_URL_PROD_HOST)
     upload_to_testflight(api_key: api_key, skip_waiting_for_build_processing: true)
   end
 end

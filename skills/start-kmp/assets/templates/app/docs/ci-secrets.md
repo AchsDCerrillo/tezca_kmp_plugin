@@ -12,10 +12,13 @@ Lanes live in `fastlane/Fastfile`. Add these under **Settings → Secrets and va
 | `FIREBASE_ANDROID_APP_ID` | dev | Firebase console → Android app (`__APP_ID__.dev`) → App ID `1:…:android:…` |
 | `FIREBASE_IOS_APP_ID` | dev | Firebase console → iOS app → App ID `1:…:ios:…` |
 | `PLAY_SERVICE_ACCOUNT_JSON` | release | Play Console → Setup → API access → service account JSON (release manager). The first AAB must be uploaded by hand once. |
+| `APPLE_TEAM_ID` | dev, release (iOS) | developer.apple.com → Membership → Team ID (10 characters) |
 | `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8_BASE64` | dev, release (iOS) | App Store Connect → Users and Access → Integrations → API key; `base64 -i AuthKey_XXX.p8` |
 | `MATCH_GIT_URL`, `MATCH_PASSWORD`, `MATCH_GIT_BASIC_AUTHORIZATION` | dev, release (iOS) | private certificates repo for `fastlane match`; run `bundle exec fastlane match adhoc` and `match appstore` once locally; basic auth = `base64 "user:token"` |
 
-Variables (not secrets): `FIREBASE_TESTER_GROUPS` (comma separated, default `qa`).
+Variables (not secrets): `FIREBASE_TESTER_GROUPS` (comma separated, default `qa`) and `IOS_BUNDLE_ID` (only if it differs from the Fastfile default).
+
+Also commit `Gemfile.lock`: run `bundle install` once locally.
 
 Also:
 - Register the ad-hoc devices in the Apple portal and re-run `match adhoc --force_for_new_devices` when testers change.
