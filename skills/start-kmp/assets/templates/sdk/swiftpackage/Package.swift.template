@@ -1,0 +1,19 @@
+// swift-tools-version:5.9
+// Rendered by .github/workflows (dev.yml / release.yml) into the SPM repository with the real
+// URL and checksum of the zipped XCFramework attached to the GitHub release.
+import PackageDescription
+
+let package = Package(
+    name: "__SDK_NAME__",
+    platforms: [.iOS("__IOS_MIN__")],
+    products: [
+        .library(name: "__SDK_NAME__", targets: ["__SDK_NAME__"]),
+    ],
+    targets: [
+        .binaryTarget(
+            name: "__SDK_NAME__",
+            url: "{{XCFRAMEWORK_URL}}",
+            checksum: "{{XCFRAMEWORK_CHECKSUM}}"
+        ),
+    ]
+)

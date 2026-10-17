@@ -1,0 +1,96 @@
+{
+  "skill_name": "tezca-kmp-development",
+  "evals": [
+    {
+      "id": 1,
+      "name": "full-app-login",
+      "skills": [
+        "start-kmp",
+        "new-feature",
+        "make-screen",
+        "make-api",
+        "make-preferences",
+        "make-repository",
+        "make-usecase",
+        "make-viewmodel"
+      ],
+      "prompt": "This is a fresh Compose Multiplatform wizard project (KratosGym). Set it up as a full app for Android and iOS: package com.neutronsolutions.kratosgym, prod API api.kratosgym.com/v1/, dev API dev.api.kratosgym.com/v1/, iOS 16, with CI. Then create an onboarding feature with a login screen. The backend: POST auth/login with {\"email\",\"password\"} returns {\"access_token\":\"..\",\"refresh_token\":\"..\",\"user\":{\"id\":1,\"name\":\"Ana\"}}; 401 means wrong credentials. Save the session on the device so the API sends the token, don't do the login offline, and after login go to a simple home screen that says hello with the user's name.",
+      "expected_output": "Project scaffolded in app mode (build-logic, core modules, .tezca-kmp.json, CI); :feature:onboarding module with AuthApi + remote data source, session preferences + TokenProvider override, remote-only AuthRepository, LoginUseCase (+ validation), LoginViewModel (UiState/Action/Event), LoginRoute/LoginScreen with strings in composeResources, destinations + graph wired in AppNavHost; builds for Android and iOS; KoinGraphTest passes.",
+      "files": [],
+      "assertions": [
+        "tezca-kmp.json exists with mode=app and features containing onboarding",
+        "./gradlew :androidApp:assembleDevDebug succeeds",
+        "./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 succeeds",
+        "./gradlew :shared:testAndroidHostTest succeeds (Koin graph resolves)",
+        "LoginViewModel does not inject a repository or data source (only use cases)",
+        "Login screen user-facing strings live in feature/onboarding composeResources strings.xml",
+        "A TokenProvider implementation backed by DataStore overrides NoTokenProvider",
+        "Login repository is remote-only (no Room entity for login)",
+        "AppNavHost wires onboarding graph with a callback to a home destination"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "offline-list-with-tests",
+      "skills": [
+        "make-screen",
+        "make-api",
+        "make-database",
+        "make-repository",
+        "make-usecase",
+        "make-viewmodel",
+        "add-tests"
+      ],
+      "prompt": "In the user-profile feature, add a workout history screen. GET workouts?page=1 returns {\"items\":[{\"id\":10,\"title\":\"Leg day\",\"duration_minutes\":55,\"performed_at\":\"2026-10-01T18:30:00Z\"}],\"page\":1,\"total_pages\":3}. It has to work offline and support pull to refresh; tapping an item can just show a snackbar with the title for now. Add tests for the API, the DAO, the repository and the ViewModel.",
+      "expected_output": "Workout DTO/resources/api/remote DS, Room entity/DAO/UserProfileDatabase + kmp.room applied, local DS, offline-first repository with SyncMetadataStore TTL, observe+refresh use cases, list ViewModel, Route/Screen with PullToRefreshBox, destination in graph; tests in commonTest pass on JVM host.",
+      "files": [],
+      "assertions": [
+        "feature/user-profile/build.gradle.kts applies kmp.room",
+        "Repository observe function reads from the local data source (Room), refresh writes to it",
+        "Repository uses SyncMetadataStore for freshness",
+        "./gradlew :feature:user-profile:testAndroidHostTest succeeds with tests for API, DAO, repository and ViewModel",
+        "./gradlew :feature:user-profile:compileKotlinIosSimulatorArm64 succeeds",
+        "./gradlew :androidApp:assembleDevDebug succeeds"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "sdk-feature",
+      "skills": [
+        "new-feature",
+        "make-api",
+        "make-database",
+        "make-repository",
+        "make-usecase",
+        "add-tests"
+      ],
+      "prompt": "This is our FitCore KMP SDK. Add a workouts feature: GET workouts returns a list of {id, title, duration_minutes, performed_at} and GET workouts/{id} returns one. It should cache offline. Expose 'observe workouts', 'refresh workouts' and 'get workout by id' to the Android and iOS apps that consume the SDK, nice to use from Swift. Add tests.",
+      "expected_output": "workouts package in SDK module with internal data layer, public domain model + use cases with internal constructors, WorkoutsFeature accessor on FitCoreSdk facade, SdkKoin registration; explicit API compiles; SKIE header has the use cases; tests pass.",
+      "files": [],
+      "assertions": [
+        "FitCoreSdk facade exposes a workouts accessor",
+        "Use cases are public with internal constructors; repository/data sources/DTOs/entities are internal",
+        "./gradlew :shared:testAndroidHostTest succeeds",
+        "./gradlew :shared:assembleFitCoreSdkDebugXCFramework succeeds",
+        "Generated FitCoreSdk.h contains the workouts use case classes and does not contain WorkoutDto or WorkoutEntity"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "add-sdk-crashlytics",
+      "skills": [
+        "add-sdk"
+      ],
+      "prompt": "Add Firebase Crashlytics to the app so we can log non-fatal errors from shared code: https://firebase.google.com/docs/crashlytics/get-started?platform=android and https://firebase.google.com/docs/crashlytics/get-started?platform=ios",
+      "expected_output": "Classifies GitLive firebase-crashlytics (wrapper, shape B) vs native; adds catalog entries, google-services + crashlytics Gradle plugins, a vendor-neutral CrashReporter interface + Koin binding + fake, FirebaseApp.configure() in iOSApp, SPM instructions for firebase-ios-sdk, a dSYM run-script note and a hand-over checklist; Android and iOS framework still build.",
+      "files": [],
+      "assertions": [
+        "A CrashReporter (capability-named) interface exists in common code and is bound in Koin",
+        "Version catalog has the new entries; no hardcoded versions in build files",
+        "./gradlew :androidApp:assembleDevDebug succeeds (with a placeholder or documented google-services.json step)",
+        "./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 succeeds",
+        "The final answer contains a numbered checklist of console/Xcode steps"
+      ]
+    }
+  ]
+}

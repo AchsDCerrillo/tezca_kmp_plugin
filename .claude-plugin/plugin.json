@@ -1,0 +1,10 @@
+{
+  "name": "tezca-kmp-development",
+  "version": "0.1.0",
+  "description": "Kotlin Multiplatform development for Android and iOS: set up a KMP SDK or a Compose Multiplatform app (Koin, Room 3, Ktor, DataStore, kotlinx datetime/serialization/coroutines, lifecycle ViewModel, SKIE, CI/CD to Firebase and the stores) and grow it layer by layer with MVVM feature modules: APIs, Room DAOs, preferences, offline-first repositories, use cases, ViewModels, screens and tests.",
+  "author": {
+    "name": "AchsDCerrillo",
+    "email": "achscerrillo@gmail.com"
+  },
+  "keywords": ["kotlin", "multiplatform", "kmp", "compose-multiplatform", "android", "ios", "koin", "room", "ktor", "mvvm", "skie"]
+}

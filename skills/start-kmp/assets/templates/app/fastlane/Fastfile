@@ -1,0 +1,103 @@
+# Lanes used by .github/workflows/dev.yml and release.yml. Run locally with `bundle exec fastlane <platform> <lane>`.
+# Required secrets are listed in docs/ci-secrets.md.
+
+IOS_PROJECT = "iosApp/iosApp.xcodeproj"
+IOS_SCHEME = "iosApp"
+IOS_BUNDLE_ID = ENV.fetch("IOS_BUNDLE_ID", "__APP_ID__.__APP_NAME__")
+BASE_URL_DEV_HOST = "__BASE_URL_DEV_HOST__"
+BASE_URL_PROD_HOST = "__BASE_URL_PROD_HOST__"
+
+def version_name
+  (ENV["VERSION_NAME"] || "1.0.0").sub(/^v/, "")
+end
+
+def tester_groups
+  ENV.fetch("FIREBASE_TESTER_GROUPS", "qa")
+end
+
+platform :android do
+  desc "Dev flavor, signed release APK -> Firebase App Distribution"
+  lane :dev do
+    gradle(
+      task: "assemble",
+      flavor: "dev",
+      build_type: "Release",
+      properties: { "versionCode" => ENV.fetch("VERSION_CODE", "1"), "versionName" => "#{version_name}-dev" }
+    )
+    firebase_app_distribution(
+      app: ENV.fetch("FIREBASE_ANDROID_APP_ID"),
+      service_credentials_file: ENV.fetch("FIREBASE_SERVICE_ACCOUNT_FILE"),
+      android_artifact_type: "APK",
+      android_artifact_path: lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH],
+      groups: tester_groups,
+      release_notes: last_git_commit[:message]
+    )
+  end
+
+  desc "Prod flavor AAB -> Google Play internal track"
+  lane :release do
+    gradle(
+      task: "bundle",
+      flavor: "prod",
+      build_type: "Release",
+      properties: { "versionCode" => ENV.fetch("VERSION_CODE"), "versionName" => version_name }
+    )
+    upload_to_play_store(
+      json_key: ENV.fetch("PLAY_SERVICE_ACCOUNT_FILE"),
+      package_name: "__APP_ID__",
+      track: "internal",
+      aab: lane_context[SharedValues::GRADLE_AAB_OUTPUT_PATH],
+      release_status: "completed"
+    )
+  end
+end
+
+platform :ios do
+  before_all do
+    setup_ci if ENV["CI"]
+  end
+
+  def asc_api_key
+    app_store_connect_api_key(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_content: ENV.fetch("ASC_KEY_P8_BASE64"),
+      is_key_content_base64: true
+    )
+  end
+
+  def build_ios(export_method:, base_url_host:)
+    increment_build_number(xcodeproj: IOS_PROJECT, build_number: ENV.fetch("BUILD_NUMBER", "1"))
+    increment_version_number(xcodeproj: IOS_PROJECT, version_number: version_name)
+    build_app(
+      project: IOS_PROJECT,
+      scheme: IOS_SCHEME,
+      configuration: "Release",
+      export_method: export_method,
+      # The Xcode build phase runs ./gradlew :shared:embedAndSignAppleFrameworkForXcode, so Kotlin is compiled here too.
+      xcargs: "BASE_URL='#{base_url_host}'",
+      output_directory: "build/ios"
+    )
+  end
+
+  desc "Ad-hoc build against the dev API -> Firebase App Distribution"
+  lane :dev do
+    api_key = asc_api_key
+    match(type: "adhoc", readonly: true, api_key: api_key)
+    build_ios(export_method: "ad-hoc", base_url_host: BASE_URL_DEV_HOST)
+    firebase_app_distribution(
+      app: ENV.fetch("FIREBASE_IOS_APP_ID"),
+      service_credentials_file: ENV.fetch("FIREBASE_SERVICE_ACCOUNT_FILE"),
+      groups: tester_groups,
+      release_notes: last_git_commit[:message]
+    )
+  end
+
+  desc "App Store build against the prod API -> TestFlight"
+  lane :release do
+    api_key = asc_api_key
+    match(type: "appstore", readonly: true, api_key: api_key)
+    build_ios(export_method: "app-store", base_url_host: BASE_URL_PROD_HOST)
+    upload_to_testflight(api_key: api_key, skip_waiting_for_build_processing: true)
+  end
+end

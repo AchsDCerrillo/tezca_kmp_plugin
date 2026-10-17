@@ -1,0 +1,40 @@
+# Publishing a GitHub Release (tag v1.4.0) publishes SDK 1.4.0: Maven (GitHub Packages) and the
+# XCFramework attached to that release + Package.swift tagged 1.4.0 in the SPM repository.
+name: Release publish
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  publish:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compute version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: echo "VERSION=${TAG#v}" >> "$GITHUB_ENV"
+      - name: Test
+        run: ./gradlew :__SDK_MODULE__:testAndroidHostTest :__SDK_MODULE__:iosSimulatorArm64Test
+      - name: Publish Maven (GitHub Packages)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew :__SDK_MODULE__:publishAllPublicationsToGitHubPackagesRepository -PsdkVersion=$VERSION
+      - name: Build XCFramework
+        run: ./gradlew :__SDK_MODULE__:assemble__SDK_NAME__ReleaseXCFramework -PsdkVersion=$VERSION
+      - name: Publish SPM release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SPM_REPO: ${{ vars.SPM_REPO }}
+          SPM_REPO_TOKEN: ${{ secrets.SPM_REPO_TOKEN }}
+        run: scripts/publish-spm.sh "$VERSION" "${{ github.event.release.tag_name }}"

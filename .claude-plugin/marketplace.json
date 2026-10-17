@@ -1,0 +1,16 @@
+{
+  "name": "tezca-kmp-marketplace",
+  "description": "Tezca Kotlin Multiplatform development plugin",
+  "owner": {
+    "name": "AchsDCerrillo",
+    "email": "achscerrillo@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "tezca-kmp-development",
+      "source": "./",
+      "description": "Skills to set up and grow Kotlin Multiplatform SDKs and Compose Multiplatform apps (Android + iOS) with MVVM feature modules.",
+      "version": "0.1.0"
+    }
+  ]
+}

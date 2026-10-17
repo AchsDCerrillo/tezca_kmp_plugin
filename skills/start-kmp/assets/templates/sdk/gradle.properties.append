@@ -1,0 +1,4 @@
+
+# tezca-kmp
+kmp.basePackage=__PKG__
+sdkVersion=0.1.0

@@ -1,0 +1,10 @@
+package __PKG__.core.network.di
+
+import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.engine.okhttp.OkHttp
+import org.koin.core.module.Module
+import org.koin.dsl.module
+
+internal actual val platformNetworkModule: Module = module {
+    single<HttpClientEngine> { OkHttp.create() }
+}

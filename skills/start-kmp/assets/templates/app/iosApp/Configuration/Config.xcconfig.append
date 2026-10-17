@@ -1,0 +1,6 @@
+
+// tezca-kmp: API host + path without scheme ("//" starts a comment here). Debug runs hit dev, Release prod;
+// CI overrides BASE_URL per lane (fastlane xcargs).
+BASE_URL_Debug=__BASE_URL_DEV_HOST__
+BASE_URL_Release=__BASE_URL_PROD_HOST__
+BASE_URL=$(BASE_URL_$(CONFIGURATION))

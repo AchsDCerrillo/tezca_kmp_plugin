@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, dev]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android build + JVM tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Unit tests (commonTest + androidHostTest, every module)
+        run: ./gradlew testAndroidHostTest
+      - name: Assemble
+        run: ./gradlew :androidApp:assembleDevDebug
+
+  ios:
+    name: iOS tests + framework
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: iOS simulator tests (every module)
+        run: ./gradlew iosSimulatorArm64Test
+      - name: Link framework
+        run: ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64

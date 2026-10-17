@@ -1,0 +1,2 @@
+package_name("__APP_ID__")
+app_identifier(ENV.fetch("IOS_BUNDLE_ID", "__APP_ID__.__APP_NAME__"))
